@@ -1,7 +1,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.live_ONE_day.live_one_day">
    <application
+<<<<<<< HEAD
         android:label="하루살아"
+=======
+        android:label="live_one_day"
+>>>>>>> a9879fbbd117c0dd303795868455ad5b1881dcd1
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity
