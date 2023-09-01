@@ -110,6 +110,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         child: GestureDetector(
             onTap: () {
               setState(() {
+                if (FocusScope.of(context).hasFocus)
+                  FocusScope.of(context).unfocus();
                 time_place[length] = _Data(length);
                 _input_fields[length] = TimeAndPlace(key: ValueKey<int>(length++));
               });
@@ -126,6 +128,9 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
 
   // 주간 일정 등록 매서드
   void _register() {
+    if (FocusScope.of(context).hasFocus)
+      FocusScope.of(context).unfocus();
+
     if (_text_ctr.text.isEmpty) {
       print("이름을 등록해 주세요");
     }
@@ -136,7 +141,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
     else {
       bool check = true;
       List<_Data> tmps = time_place.values.toList();
-      Set<String> days = time_place.values.map((e) => e.getDay()).toSet();
+      Set<String> days = tmps.map((e) => e.getDay()).toSet();
 
       for (int i=0 ; i < days.length ; i++) {
         if (scheduleIsEmpty(
@@ -188,7 +193,10 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
       body: Container(
         child: SafeArea(
           child: GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
+            onTap: () {
+              if (FocusScope.of(context).hasFocus)
+                FocusScope.of(context).unfocus();
+            },
             child: Column(
               mainAxisSize: MainAxisSize.max,
               children: [
@@ -201,6 +209,8 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                       bottom: 5, left: 15,
                       child: GestureDetector(
                           onTap: () {
+                            if (FocusScope.of(context).hasFocus)
+                              FocusScope.of(context).unfocus();
                             time_place.clear();
                             Navigator.pop(context);
                           },
