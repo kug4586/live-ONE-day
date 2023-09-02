@@ -12,8 +12,6 @@ import 'package:flutter_time_picker_spinner/flutter_time_picker_spinner.dart';
 const double appbar_size = 22;  // 상단바 크기
 const double item_height = 60;  // 리스트 높이
 
-
-
 // 시간과 장소 객체
 class _Data {
   _Data(this.key);
@@ -32,6 +30,7 @@ class _Data {
   String getStartToStr() { return DateFormat("Hm").format(start); }
 
   void setEnd(DateTime t) => end = t;
+  void setEndToZero(DateTime t) => end = DateTime(t.year, t.month, t.day+1);
   DateTime getEnd() { return end; }
   String getEndToStr() { return DateFormat("Hm").format(end); }
 
@@ -40,15 +39,11 @@ class _Data {
 
   double calculateStart() {
     DateTime tmp = DateTime(start.year, start.month, start.day);
-    return start.isBefore(end)
-        ? start.difference(tmp).inMinutes * 1.0
-        : end.difference(tmp).inMinutes * 1.0;
+    return start.difference(tmp).inMinutes * 1.0;
   }
 
   double calculateDuration() {
-    return start.isBefore(end)
-        ? end.difference(start).inMinutes * 1.0
-        : start.difference(end).inMinutes * 1.0;
+    return end.difference(start).inMinutes * 1.0;
   }
 }
 
@@ -134,20 +129,17 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
     if (_text_ctr.text.isEmpty) {
       print("이름을 등록해 주세요");
     }
-    else
-      if (time_place.length == 0) {
+    else if (time_place.length == 0) {
       print("시간 및 장소를 등록해주세요");
     }
     else {
       bool check = true;
       List<_Data> tmps = time_place.values.toList();
-      Set<String> days = tmps.map((e) => e.getDay()).toSet();
+      Set<String> days = time_place.values.map((e) => e.getDay()).toSet();
 
       for (int i=0 ; i < days.length ; i++) {
-        if (scheduleIsEmpty(
-            days.elementAt(i),
-            Time(begin: tmps[i].calculateStart(), duration: tmps[i].calculateDuration())
-        ) == false) {
+        if (scheduleIsEmpty(days.elementAt(i), tmps[i].calculateStart()) == false)
+        {
           check = false;
           break;
         }
@@ -156,22 +148,23 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
       if (check) {
         Color c = UniqueColorGenerator.getColor();
         tmps.forEach((item) {
-          double begin = item.calculateStart();
-          double duration = item.calculateDuration();
+          Timeline _value = Timeline(
+              top: item.calculateStart(),
+              w: item_width,
+              h: item.calculateDuration(),
+              day: item.getDay(),
+              start: item.getStart(),
+              end: item.getEnd(),
+              name: _text_ctr.text,
+              place: item.getPlace(),
+              color: c.value
+          );
 
-          week_time[item.getDay()]!.add(
-            Time(begin: begin, duration: duration));
+          // Timeline 데이터 추가
+          week_time[item.getDay()]!.add(_value);
 
-          table_data[item.getDay()]?.add(TableItem(
-            top: begin,
-            h: duration,
-            start: item.getStart(),
-            end: item.getEnd(),
-            name: _text_ctr.text,
-            place: item.getPlace(),
-            color: c,
-            isSunday: (item.getDay() == "일요일") ? true : false,
-          ));
+          // 테이블 아이템 추가
+          table_data[item.getDay()]?.add(TableItem(timeline: _value));
         });
         time_place.clear();
         table_sctr.add(true);
@@ -193,10 +186,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
       body: Container(
         child: SafeArea(
           child: GestureDetector(
-            onTap: () {
-              if (FocusScope.of(context).hasFocus)
-                FocusScope.of(context).unfocus();
-            },
+            onTap: () => FocusScope.of(context).unfocus(),
             child: Column(
               mainAxisSize: MainAxisSize.max,
               children: [
@@ -209,8 +199,6 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                       bottom: 5, left: 15,
                       child: GestureDetector(
                           onTap: () {
-                            if (FocusScope.of(context).hasFocus)
-                              FocusScope.of(context).unfocus();
                             time_place.clear();
                             Navigator.pop(context);
                           },
@@ -308,7 +296,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                         child: Text(e + "요일",
                             style: TextStyle(
                                 fontWeight: regular,
-                                fontSize: 16,
+                                fontSize: 18,
                                 color: Color(text_color_1)))),
                   ))
                       .toList()
@@ -392,22 +380,41 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
             ]),
             actions: [
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 5, vertical: 5),
+                padding: EdgeInsets.symmetric(vertical: 15),
                 child: GestureDetector(
                   onTap: () {
                     Navigator.pop(context);
                   },
-                  child: Text("취소"),
+                  child: Text("취소", style: TextStyle(fontSize: 16))
                 ),
               ),
               Container(
-                margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                margin: EdgeInsets.symmetric(horizontal: 15, vertical: 15),
                 child: GestureDetector(
                   onTap: () {
+                    // 만약 시작 시간 정하는데, 현재 끝 시간보다 나중이라면
+                    if (isStart && _data.getStart().isAfter(_data.getEnd())) {
+                      // 만약 시작 시간이 23시를 넘겼다면, 끝나는 시간을 24시로 고정
+                      if (_data.start.hour == 23 && _data.start.minute > 0)
+                        _data.setEndToZero(_data.getStart());
+                      // 아니면 1시간 더함
+                      else _data.setEnd(_data.getStart().add(Duration(hours: 1)));
+                    }
+
+                    // 만약 끝 시간을 정하는데
+                    if (!isStart) {
+                      // 만약 24시로 맞추었다면
+                      if (_data.end.hour == 0 && _data.end.minute == 0)
+                        _data.setEndToZero(_data.getEnd());
+                      // 아님 만약 현재 시작 시간보다 먼저라면
+                      else if (_data.getEnd().isBefore(_data.getStart()))
+                        _data.setStart(_data.getEnd().subtract(Duration(hours: 1)));
+                    }
+
                     time_place[_data.key] = _data;
                     setState(() => Navigator.pop(context));
                   },
-                  child: Text("확인"),
+                  child: Text("확인", style: TextStyle(fontSize: 16)),
                 ),
               ),
             ],
@@ -444,7 +451,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                             left: 0,
                             child: Text(_data.getDay(),
                               style: TextStyle(
-                                color: Colors.black,
+                                color: Color(text_color_1),
                                 fontSize: 18,
                                 fontWeight: medium))),
                         Positioned(
@@ -467,7 +474,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                           left: 0,
                           child: Text(_data.getStartToStr(),
                               style: TextStyle(
-                                  color: Colors.black,
+                                  color: Color(text_color_1),
                                   fontSize: 20,
                                   fontWeight: medium))),
                       Positioned(
@@ -498,7 +505,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                           left: 0,
                           child: Text(_data.getEndToStr(),
                               style: TextStyle(
-                                  color: Colors.black,
+                                  color: Color(text_color_1),
                                   fontSize: 20,
                                   fontWeight: medium))),
                       Positioned(

@@ -12,7 +12,8 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage>
+    with WidgetsBindingObserver {
 
   // 상단바 크기
   static double appbar_size = 32;
@@ -55,11 +56,7 @@ class _HomePageState extends State<HomePage> {
                         bottom: 0,
                         right: 0,
                         child: GestureDetector(
-                            onTap: () {
-                              table_data.values.forEach((e) {
-                                print(e.length);
-                              });
-                            },
+                            onTap: () {},
                             child: Icon(Icons.settings, size: appbar_size))),
                     Positioned(
                         bottom: 0,

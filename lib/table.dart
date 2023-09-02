@@ -3,12 +3,12 @@ import 'package:live_one_day/config.dart';
 import 'package:flutter/material.dart';
 
 // 테이블 아이템 사이즈
-const double item_width = 49;
+late double item_width;
 const double item_height = 5;
 const double item_count = 288;
 
 // 테이블 데이터
-Map<String, List<Widget>> table_data = {
+Map<String, List<TableItem>> table_data = {
   "월요일" : [],
   "화요일" : [],
   "수요일" : [],
@@ -22,24 +22,10 @@ Map<String, List<Widget>> table_data = {
 class TableItem extends StatefulWidget {
   const TableItem({
     super.key,
-    required this.top,
-    required this.h,
-    required this.start,
-    required this.end,
-    required this.name,
-    required this.place,
-    required this.color,
-    required this.isSunday
+    required this.timeline
   });
 
-  final double top;
-  final double h;
-  final DateTime start;
-  final DateTime end;
-  final String name;
-  final String place;
-  final Color color;
-  final bool isSunday;
+  final Timeline timeline;
 
   @override
   State<TableItem> createState() => _TableItemState();
@@ -48,29 +34,48 @@ class _TableItemState extends State<TableItem> {
 
   @override
   Widget build(BuildContext context) {
+
+    double tmp = widget.timeline.top + widget.timeline.h - 1425;
+    print(tmp);
+
     return Positioned(
-      top: widget.top,
-      left: 1,
-      child: Container(
-        width: 49,
-        height: widget.h,
-        decoration: BoxDecoration(
-            color: widget.color,
-            borderRadius: (widget.isSunday && widget.top + widget.h >= 1425)
-                ? BorderRadius.only(bottomRight: Radius.circular(widget.top + widget.h - 1425))
-                : null
-        ),
-        child: Column(children: [
-          Text(widget.name),
-          Text(widget.place)
-        ])
-      )
+        top: widget.timeline.top,
+        left: 1,
+        child: Container(
+            width: (widget.timeline.isSunday() && widget.timeline.top > 1425)
+                ? widget.timeline.w - widget.timeline.top + 1420
+                : widget.timeline.w,
+            height: widget.timeline.h,
+            alignment: Alignment.topLeft,
+            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            decoration: BoxDecoration(
+                color: widget.timeline.getColor(),
+                borderRadius: (widget.timeline.isSunday() && widget.timeline.top + widget.timeline.h >= 1425)
+                    ? BorderRadius.only(bottomRight: Radius.circular(tmp))
+                    : null
+            ),
+            child: Wrap(children: [
+              Column(children: [
+                Text(widget.timeline.name,
+                    style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: bold,
+                        color: Colors.white)),
+                SizedBox(height: 4),
+                Text(widget.timeline.place,
+                  style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: regular,
+                      color: Colors.white))
+              ])
+            ])
+        )
     );
   }
 }
 
 // 구분선 만드는 메서드
-List<Widget> createLine(bool verORhor) {
+List<Widget> createLine(bool verORhor, double w) {
   List<Widget> ret = [];
   // 가로 구분선 생성
   if (verORhor) {
@@ -86,7 +91,7 @@ List<Widget> createLine(bool verORhor) {
     ret.add(SizedBox(width: 22));
     ret.add(VerticalDivider(width: 0, thickness: 1, color: Color(line_color)));
     for (int i=0 ; i < 6 ; i++) {
-      ret.add(SizedBox(width: 50));
+      ret.add(SizedBox(width: w));
       ret.add(VerticalDivider(width: 0, thickness: 1, color: Color(line_color)));
     }
   }
@@ -94,7 +99,7 @@ List<Widget> createLine(bool verORhor) {
 }
 
 // 행과 열의 라벨 만드는 메서드
-List<Widget> createLabel(bool colORrow) {
+List<Widget> createLabel(bool colORrow, double w) {
   List<Widget> ret = [];
   // 열 라벨 생성
   if (colORrow) {
@@ -102,7 +107,7 @@ List<Widget> createLabel(bool colORrow) {
         .forEach((day) {
       ret.add(
           Container(
-              width: 50,
+              width: w,
               height: 24,
               alignment: Alignment.center,
               child: Text(day,
@@ -140,20 +145,13 @@ class WeekSchedule extends StatefulWidget {
   @override
   State<WeekSchedule> createState() => _WeekScheduleState();
 }
-
-
 class _WeekScheduleState extends State<WeekSchedule> {
-
-  // 구분선
-  final List<Widget> vertical_divs = createLine(true);
-  final List<Widget> horizontal_divs = createLine(false);
-
-  // 라벨
-  final List<Widget> column_labels = createLabel(true);
-  final List<Widget> row_labels = createLabel(false);
 
   @override
   Widget build(BuildContext context) {
+
+    item_width = (MediaQuery.of(context).size.width - 42) / 7;
+
     return SingleChildScrollView(
       child: Container(
           width: MediaQuery.of(context).size.width,
@@ -165,13 +163,13 @@ class _WeekScheduleState extends State<WeekSchedule> {
           child: Stack(children: [
             // 세로 구분선
             Positioned(
-              top: 0,
-              left: 0,
-              child: Container(
-                width: MediaQuery.of(context).size.width - 20,
-                height: 24 + item_height * item_count,
-                child: Column(children: vertical_divs)
-              )
+                top: 0,
+                left: 0,
+                child: Container(
+                    width: MediaQuery.of(context).size.width - 20,
+                    height: 24 + item_height * item_count,
+                    child: Column(children: createLine(true, item_width))
+                )
             ),
             // 가로 구분선
             Positioned(
@@ -180,16 +178,16 @@ class _WeekScheduleState extends State<WeekSchedule> {
                 child: Container(
                     width: MediaQuery.of(context).size.width - 20,
                     height: 24 + item_height * item_count,
-                    child: Row(children: horizontal_divs)
+                    child: Row(children: createLine(false, item_width))
                 )
             ),
             // 열의 라벨
             Positioned(
-              top: 0,
-              left: 22,
-              width: MediaQuery.of(context).size.width - 20,
-              height: 24,
-              child: Row(children: column_labels)
+                top: 0,
+                left: 22,
+                width: MediaQuery.of(context).size.width - 20,
+                height: 24,
+                child: Row(children: createLabel(true, item_width))
             ),
             // 행의 라벨
             Positioned(
@@ -197,46 +195,46 @@ class _WeekScheduleState extends State<WeekSchedule> {
                 left: 0,
                 width: 22,
                 height: item_height * item_count,
-                child: Column(children: row_labels)
+                child: Column(children: createLabel(false, item_width))
             ),
             // 테이블 데이터
             Positioned(
               top: 24,
               left: 22,
               child: Container(
-                width: MediaQuery.of(context).size.width - 42,
-                height: item_height * item_count,
-                child: Row(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    Container(
-                      width: 50,
-                      child: Stack(children: table_data["월요일"]!)),
-                    Container(
-                      width: 50,
-                      child: Stack(children: table_data["화요일"]!),
-                    ),
-                    Container(
-                      width: 50,
-                      child: Stack(children: table_data["수요일"]!),
-                    ),
-                    Container(
-                      width: 50,
-                      child: Stack(children: table_data["목요일"]!),
-                    ),
-                    Container(
-                      width: 50,
-                      child: Stack(children: table_data["금요일"]!),
-                    ),Container(
-                      width: 50,
-                      child: Stack(children: table_data["토요일"]!),
-                    ),
-                    Container(
-                      width: 50,
-                      child: Stack(children: table_data["일요일"]!),
-                    )
-                  ]
-                )
+                  width: MediaQuery.of(context).size.width - 42,
+                  height: item_height * item_count,
+                  child: Row(
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Container(
+                            width: item_width,
+                            child: Stack(children: table_data["월요일"]!)),
+                        Container(
+                          width: item_width,
+                          child: Stack(children: table_data["화요일"]!),
+                        ),
+                        Container(
+                          width: item_width,
+                          child: Stack(children: table_data["수요일"]!),
+                        ),
+                        Container(
+                          width: item_width,
+                          child: Stack(children: table_data["목요일"]!),
+                        ),
+                        Container(
+                          width: item_width,
+                          child: Stack(children: table_data["금요일"]!),
+                        ),Container(
+                          width: item_width,
+                          child: Stack(children: table_data["토요일"]!),
+                        ),
+                        Container(
+                          width: item_width,
+                          child: Stack(children: table_data["일요일"]!),
+                        )
+                      ]
+                  )
               ),
             )
           ])
