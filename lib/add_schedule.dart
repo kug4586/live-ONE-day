@@ -6,45 +6,18 @@ import 'package:live_one_day/table.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_time_picker_spinner/flutter_time_picker_spinner.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 
 
-const double appbar_size = 22;  // 상단바 크기
-const double item_height = 60;  // 리스트 높이
+const double _appbar_size = 22;  // 상단바 크기
 
 // 시간과 장소 객체
 class _Data {
-  _Data(this.key);
+  _Data(this.key, this.timeline);
 
   final int key;
-  String day = "월";
-  DateTime start = DateTime(0,1,1, 12, 0);
-  DateTime end = DateTime(0,1,1, 13, 0);
-  String place = "";
-
-  void setDay(String d) => day = d;
-  String getDay() { return day + "요일"; }
-
-  void setStart(DateTime t) => start = t;
-  DateTime getStart() { return start; }
-  String getStartToStr() { return DateFormat("Hm").format(start); }
-
-  void setEnd(DateTime t) => end = t;
-  void setEndToZero(DateTime t) => end = DateTime(t.year, t.month, t.day+1);
-  DateTime getEnd() { return end; }
-  String getEndToStr() { return DateFormat("Hm").format(end); }
-
-  void setPlace(String p) => place = p;
-  String getPlace() { return place; }
-
-  double calculateStart() {
-    DateTime tmp = DateTime(start.year, start.month, start.day);
-    return start.difference(tmp).inMinutes * 1.0;
-  }
-
-  double calculateDuration() {
-    return end.difference(start).inMinutes * 1.0;
-  }
+  final Timeline timeline;
 }
 
 // 데이터
@@ -54,12 +27,17 @@ Map<int, _Data> time_place = {};
 
 // 메인
 class AddSchedulePage extends StatefulWidget {
-  const AddSchedulePage({super.key});
+  const AddSchedulePage({super.key, this.data = null});
+
+  final Map<String, dynamic>? data;
 
   @override
   State<AddSchedulePage> createState() => _AddSchedulePageState();
 }
 class _AddSchedulePageState extends State<AddSchedulePage> {
+
+  // 수정인지 확인
+  bool fix = true;
 
   // 이름 입력란 컨트롤러
   final TextEditingController _text_ctr = TextEditingController();
@@ -107,8 +85,22 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
               setState(() {
                 if (FocusScope.of(context).hasFocus)
                   FocusScope.of(context).unfocus();
-                time_place[length] = _Data(length);
+                time_place[length] = _Data(
+                  length,
+                  Timeline(
+                    top: 720,
+                    w: item_width,
+                    h: 60,
+                    day: "월요일",
+                    start: DateTime(0, 1, 1, 12, 0),
+                    end: DateTime(0, 1, 1, 13, 0),
+                    name: "",
+                    place: "",
+                    color: 0xFFFFFFFF
+                  )
+                );
                 _input_fields[length] = TimeAndPlace(key: ValueKey<int>(length++));
+                table_sctr.add(false);
               });
             },
             child: Text(
@@ -118,6 +110,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                     fontWeight: regular,
                     color: Colors.red)))
     ));
+    printForTest("d ${ret.toString()}");
     return ret;
   }
 
@@ -127,55 +120,79 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
       FocusScope.of(context).unfocus();
 
     if (_text_ctr.text.isEmpty) {
-      print("이름을 등록해 주세요");
+      Fluttertoast.showToast(
+          msg: "이름을 등록해 주세요",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1
+      );
     }
     else if (time_place.length == 0) {
-      print("시간 및 장소를 등록해주세요");
+      Fluttertoast.showToast(
+          msg: "시간 및 장소를 등록해주세요",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1
+      );
     }
     else {
       bool check = true;
       List<_Data> tmps = time_place.values.toList();
-      Set<String> days = time_place.values.map((e) => e.getDay()).toSet();
+      Set<String> days = time_place.values.map((e) => e.timeline.day).toSet();
 
       for (int i=0 ; i < days.length ; i++) {
-        if (scheduleIsEmpty(days.elementAt(i), tmps[i].calculateStart()) == false)
-        {
+        double s = tmps[i].timeline.calculateStart();
+        double e = s + tmps[i].timeline.calculateDuration();
+        if (scheduleIsEmpty(days.elementAt(i), s, e) == false) {
           check = false;
           break;
         }
       }
 
       if (check) {
-        Color c = UniqueColorGenerator.getColor();
+        // 색 지정
+        Color c = getRandomColor();
+        // 데이터 추가
+        printForTest(tmps.toString());
         tmps.forEach((item) {
-          Timeline _value = Timeline(
-              top: item.calculateStart(),
-              w: item_width,
-              h: item.calculateDuration(),
-              day: item.getDay(),
-              start: item.getStart(),
-              end: item.getEnd(),
-              name: _text_ctr.text,
-              place: item.getPlace(),
-              color: c.value
-          );
+          // 마지막 설정
+          item.timeline.name = _text_ctr.text;
+          item.timeline.color = c.value;
 
           // Timeline 데이터 추가
-          week_time[item.getDay()]!.add(_value);
+          week_time[item.timeline.day]?.add(item.timeline);
 
           // 테이블 아이템 추가
-          table_data[item.getDay()]?.add(TableItem(timeline: _value));
+          table_data[item.timeline.day]?.add(TableItem(timeline: item.timeline, isTmp: false));
         });
+        week_time.forEach((key, value) => printForTest("${key} : ${value.length}"));
+        table_data.forEach((key, value) => printForTest("${key} : ${value.length}"));
+        // 캐시 삭제
         time_place.clear();
+        // 테이블 반영
         table_sctr.add(true);
+        // Add Schedule 페이지 삭제
         Navigator.pop(context);
       }
-      else { print("이미 일정이 있습니다"); }
+      else Fluttertoast.showToast(
+          msg: "이미 일정이 있습니다",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+          timeInSecForIosWeb: 1
+      );
     }
   }
 
   @override
   void initState() {
+    if (widget.data != null) {
+      _text_ctr.text = widget.data!["name"];
+      (widget.data!["time_and_place"] as List<Timeline>).forEach((e) {
+        time_place[length] = _Data(length, e);
+        _input_fields[length] = TimeAndPlace(key: ValueKey<int>(length++));
+      });
+    }
+    printForTest(_input_fields.toString());
     remove_stream.listen((int idx) => _removeInputField(idx));
     super.initState();
   }
@@ -187,12 +204,12 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
         child: SafeArea(
           child: GestureDetector(
             onTap: () => FocusScope.of(context).unfocus(),
-            child: Column(
+            child:  Column(
               mainAxisSize: MainAxisSize.max,
               children: [
                 // 앱 바
-                Flexible(
-                  flex: 1,
+                Container(
+                  height: 50,
                   child: Stack(children: [
                     // 뒤로가기 버튼
                     Positioned(
@@ -202,7 +219,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                             time_place.clear();
                             Navigator.pop(context);
                           },
-                          child: Icon(Icons.close, size: appbar_size)),
+                          child: Icon(Icons.close, size: _appbar_size)),
                     ),
                     // 타이틀
                     Positioned(
@@ -229,7 +246,7 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(10)
                     ),
-                    child: WeekSchedule(),
+                    child: WeekSchedule(touchable: false),
                   )
                 ),
                 // 세부 내용
@@ -279,12 +296,16 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
               content: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <String>["월", "화", "수", "목", "금", "토", "일"]
+                  children: <String>["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
                       .map((e) => GestureDetector(
                     onTap: () {
                       setState(() {
-                        _data.setDay(e);
+                        tmp_data[_data.timeline.day]?.removeWhere(
+                                (item) => item.timeline.start == _data.timeline.start && item.timeline.end == _data.timeline.end);
+                        _data.timeline.day = e;
                         time_place[_data.key] = _data;
+                        tmp_data[_data.timeline.day]?.add(TableItem(timeline: _data.timeline, isTmp: true));
+                        table_sctr.add(false);
                         Navigator.pop(context);
                       });
                     },
@@ -293,7 +314,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                         color: Colors.white,
                         margin: EdgeInsets.symmetric(vertical: 10),
                         alignment: Alignment.center,
-                        child: Text(e + "요일",
+                        child: Text(e,
                             style: TextStyle(
                                 fontWeight: regular,
                                 fontSize: 18,
@@ -374,7 +395,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                       time.year, time.month, time.day,
                       time.hour, time.minute
                   );
-                  isStart ? _data.setStart(time) : _data.setEnd(time);
+                  isStart ? _data.timeline.start = time : _data.timeline.end = time;
                 }
               )
             ]),
@@ -392,26 +413,50 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                 margin: EdgeInsets.symmetric(horizontal: 15, vertical: 15),
                 child: GestureDetector(
                   onTap: () {
-                    // 만약 시작 시간 정하는데, 현재 끝 시간보다 나중이라면
-                    if (isStart && _data.getStart().isAfter(_data.getEnd())) {
+                    tmp_data[_data.timeline.day]?.removeWhere(
+                            (e) => e.timeline.top == _data.timeline.top && e.timeline.h == _data.timeline.h);
+
+                    // 만약 시작 시간 정하는데, 현재 끝 시간보다 나중이거나 같다면
+                    if (isStart && !_data.timeline.start.isBefore(_data.timeline.end)) {
                       // 만약 시작 시간이 23시를 넘겼다면, 끝나는 시간을 24시로 고정
-                      if (_data.start.hour == 23 && _data.start.minute > 0)
-                        _data.setEndToZero(_data.getStart());
+                      if (_data.timeline.start.hour == 23 && _data.timeline.start.minute > 0) {
+                        printForTest("가");
+                        _data.timeline.setEndtoZero(_data.timeline.start);
+                      }
                       // 아니면 1시간 더함
-                      else _data.setEnd(_data.getStart().add(Duration(hours: 1)));
+                      else {
+                        printForTest("나");
+                        _data.timeline.setTime(_data.timeline.start.add(Duration(hours: 1)), false);
+                      }
                     }
 
                     // 만약 끝 시간을 정하는데
                     if (!isStart) {
                       // 만약 24시로 맞추었다면
-                      if (_data.end.hour == 0 && _data.end.minute == 0)
-                        _data.setEndToZero(_data.getEnd());
-                      // 아님 만약 현재 시작 시간보다 먼저라면
-                      else if (_data.getEnd().isBefore(_data.getStart()))
-                        _data.setStart(_data.getEnd().subtract(Duration(hours: 1)));
+                      if (_data.timeline.end.hour == 0 && _data.timeline.end.minute == 0) {
+                        printForTest("다");
+                        _data.timeline.setEndtoZero(_data.timeline.start);
+                      }
+                      // 아님 만약 현재 시작 시간보다 먼저거나 같다면
+                      else if (!_data.timeline.end.isAfter(_data.timeline.start)) {
+                        printForTest("라");
+                        _data.timeline.setTime(_data.timeline.end.subtract(Duration(hours: 1)), true);
+                      }
                     }
 
+                    _data.timeline.top = _data.timeline.calculateStart();
+                    _data.timeline.h = _data.timeline.calculateDuration();
+
+                    printForTest(""
+                        "start: ${_data.timeline.getTimetoStr(true)}, "
+                        "end: ${_data.timeline.getTimetoStr(false)}, "
+                        "top: ${_data.timeline.top}, h: ${_data.timeline.h}"
+                    );
+
                     time_place[_data.key] = _data;
+                    tmp_data[_data.timeline.day]?.add(TableItem(timeline: _data.timeline, isTmp: true));
+                    table_sctr.add(false);
+
                     setState(() => Navigator.pop(context));
                   },
                   child: Text("확인", style: TextStyle(fontSize: 16)),
@@ -426,6 +471,8 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
   @override
   void initState() {
     _data = time_place[(widget.key as ValueKey).value]!;
+    tmp_data[_data.timeline.day]?.add(TableItem(timeline: _data.timeline, isTmp: true));
+    table_sctr.add(false);
     super.initState();
   }
 
@@ -449,7 +496,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                         Positioned(
                             bottom: 5,
                             left: 0,
-                            child: Text(_data.getDay(),
+                            child: Text(_data.timeline.day,
                               style: TextStyle(
                                 color: Color(text_color_1),
                                 fontSize: 18,
@@ -464,7 +511,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                 SizedBox(width: 20),
                 // 시작 시각
                 GestureDetector(
-                  onTap: () => _selectTime(true, _data.getStart()),
+                  onTap: () => _selectTime(true, _data.timeline.start),
                   child: Container(
                     height: item_height * 0.6,
                     width: 80,
@@ -472,7 +519,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                       Positioned(
                           bottom: 5,
                           left: 0,
-                          child: Text(_data.getStartToStr(),
+                          child: Text(_data.timeline.getTimetoStr(true),
                               style: TextStyle(
                                   color: Color(text_color_1),
                                   fontSize: 20,
@@ -495,7 +542,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                 SizedBox(width: 15),
                 // 끝 시각
                 GestureDetector(
-                  onTap: () => _selectTime(false, _data.getEnd()),
+                  onTap: () => _selectTime(false, _data.timeline.end),
                   child: Container(
                     height: item_height * 0.6,
                     width: 80,
@@ -503,7 +550,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                       Positioned(
                           bottom: 5,
                           left: 0,
-                          child: Text(_data.getEndToStr(),
+                          child: Text(_data.timeline.getTimetoStr(false),
                               style: TextStyle(
                                   color: Color(text_color_1),
                                   fontSize: 20,
@@ -526,7 +573,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
             Positioned(
               child: TextField(
                   onChanged: (str) {
-                    _data.setPlace(str);
+                    _data.timeline.day = str;
                     time_place[_data.key] = _data;
                   },
                   decoration: InputDecoration(
@@ -543,7 +590,12 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                 bottom: 15,
                 child: GestureDetector(
                     onTap: () {
-                      setState(() => remove_sctr.add((widget.key as ValueKey).value));
+                      setState(() {
+                        remove_sctr.add((widget.key as ValueKey).value);
+                        tmp_data[_data.timeline.day]?.removeWhere(
+                                (e) => e.timeline.start == _data.timeline.start && e.timeline.end == _data.timeline.end);
+                        table_sctr.add(false);
+                      });
                     },
                     child: Icon(
                         Icons.close,
