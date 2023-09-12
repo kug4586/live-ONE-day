@@ -69,6 +69,13 @@ class _TableItemState extends State<TableItem> {
                     Map<String, dynamic> tmp = {};
                     tmp["name"] = timeline.name;
                     tmp["time_and_place"] = fixSchedule(timeline.name);
+
+                    ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+                        .forEach((day) {
+                          table_data[day]!.removeWhere(
+                                  (item) => item.timeline.name == timeline.name);
+                        });
+
                     Navigator.pop(context);
                     Navigator.push(context,
                       MaterialPageRoute(builder: (context)
@@ -105,7 +112,6 @@ class _TableItemState extends State<TableItem> {
   Widget build(BuildContext context) {
     return Positioned(
         top: widget.timeline.top,
-        left: 1,
         child: GestureDetector(
           onTap: () => _showSchedule(widget.timeline),
           child: Container(
@@ -125,13 +131,13 @@ class _TableItemState extends State<TableItem> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.timeline.name,
+                    Text(widget.isTmp ? "" : widget.timeline.name,
                         style: TextStyle(
                             fontSize: 14,
                             fontWeight: medium,
                             color: Colors.white)),
                     SizedBox(height: 4),
-                    Text(widget.timeline.place,
+                    Text(widget.isTmp ? "" : widget.timeline.place,
                       style: TextStyle(
                           fontSize: 12,
                           fontWeight: regular,
@@ -152,70 +158,98 @@ List<Widget> createTableItem(bool b) {
   )).toList();
 }
 
-// 구분선 만드는 메서드
-List<Widget> createLine(bool verORhor, double w) {
-  List<Widget> ret = [];
-  // 가로 구분선 생성
-  if (verORhor) {
-    ret.add(SizedBox(height: 24));
-    ret.add(Divider(height: 0, thickness: 1, color: Color(line_color)));
-    for (int i=0 ; i < 23 ; i++) {
-      ret.add(SizedBox(height: 60));
-      ret.add(Divider(height: 0, thickness: 1, color: Color(line_color)));
-    }
+// 구분선
+class VerticalLine extends StatelessWidget {
+  const VerticalLine({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        width: MediaQuery.of(context).size.width - 20,
+        height: 24 + item_height * item_count,
+        child: Column(children: List.generate(24, (index) {
+          return Container(
+            width: MediaQuery.of(context).size.width - 20,
+            height: index == 0 ? 24 : 60,
+            decoration: BoxDecoration(
+                border: Border(bottom: BorderSide(color: Color(line_color)))),
+          );
+        }))
+    );
   }
-  // 세로 구분선 생성
-  else {
-    ret.add(SizedBox(width: 22));
-    ret.add(VerticalDivider(width: 0, thickness: 1, color: Color(line_color)));
-    for (int i=0 ; i < 6 ; i++) {
-      ret.add(SizedBox(width: w));
-      ret.add(VerticalDivider(width: 0, thickness: 1, color: Color(line_color)));
-    }
+}
+class HorizontalLine extends StatelessWidget {
+  const HorizontalLine({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        width: MediaQuery.of(context).size.width - 20,
+        height: 24 + item_height * item_count,
+        child: Row(children: List.generate(7, (index) {
+          return Container(
+            width: index == 0 ? 22 : item_width,
+            height: 24 + item_height * item_count,
+            decoration: BoxDecoration(
+                border: Border(right: BorderSide(color: Color(line_color)))),
+          );
+        }))
+    );
   }
-  return ret;
 }
 
-// 행과 열의 라벨 만드는 메서드
-List<Widget> createLabel(bool colORrow, double w) {
-  List<Widget> ret = [];
-  // 열 라벨 생성
-  if (colORrow) {
-    <String>["월", "화", "수", "목", "금", "토", "일"]
-        .forEach((day) {
-      ret.add(
-          Container(
-              width: w,
-              height: 24,
-              alignment: Alignment.center,
-              child: Text(day,
+// 라벨
+class ColumnLabel extends StatelessWidget {
+  const ColumnLabel({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        width: MediaQuery.of(context).size.width - 42,
+        height: 24,
+        child: Row(
+            children: <String>["월", "화", "수", "목", "금", "토", "일"]
+                .map((day) {
+              return Container(
+                  width: item_width,
+                  height: 24,
+                  alignment: Alignment.center,
+                  child: Text(day,
+                      style: TextStyle(
+                          fontWeight: regular,
+                          fontSize: font_size[0],
+                          color: Color(text_color_2)))
+              );
+            })
+                .toList()
+        )
+    );
+  }
+}
+class RowLabel extends StatelessWidget {
+  const RowLabel({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        width: 22,
+        height: item_height * item_count,
+        child: Column(children: List.generate(24, (index) {
+          return Container(
+              width: 22,
+              height: item_height,
+              alignment: Alignment.topRight,
+              padding: EdgeInsets.only(top: 2, right: 2),
+              child: Text(index.toString(),
                   style: TextStyle(
                       fontWeight: regular,
                       fontSize: font_size[0],
-                      color: Color(text_color_2))))
-      );
-    });
+                      color: Color(text_color_2)))
+          );
+        }))
+    );
   }
-  // 행 라벨 생성
-  else {
-    for (int i=0 ; i < 24 ; i++) {
-      ret.add(Container(
-          width: 22,
-          height: 60,
-          alignment: Alignment.topRight,
-          padding: EdgeInsets.only(right: 2, top: 2),
-          child: Text(i.toString(),
-              style: TextStyle(
-                  fontWeight: regular,
-                  fontSize: font_size[0],
-                  color: Color(text_color_2)))
-      ));
-    }
-  }
-  return ret;
 }
-
-
 
 // 메인
 class WeekSchedule extends StatefulWidget {
@@ -228,10 +262,6 @@ class WeekSchedule extends StatefulWidget {
 }
 class _WeekScheduleState extends State<WeekSchedule> {
 
-  late List<Widget> vertical_lines;
-  late List<Widget> horizontal_lines;
-  late List<Widget> column_labels;
-  late List<Widget> row_labels;
   late List<Widget> main_item;
   late List<Widget> tmp_item;
 
@@ -240,19 +270,19 @@ class _WeekScheduleState extends State<WeekSchedule> {
 
   // 테이블 업데이트
   void _updateTable(bool b) {
-    if (b) {
+    if (mounted) {
       setState(() {
-        printForTest("call true");
-        main_item = createTableItem(true);
-        ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
-            .forEach((day) => tmp_data[day]!.clear());
-        tmp_item.clear();
-      });
-    }
-    else {
-      setState(() {
-        printForTest("call false");
-        tmp_item = createTableItem(false);
+        if (b) {
+          printForTest("call true");
+          main_item = createTableItem(true);
+          ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+              .forEach((day) => tmp_data[day]!.clear());
+          tmp_item.clear();
+        }
+        else {
+          printForTest("call false");
+          tmp_item = createTableItem(false);
+        }
       });
     }
   }
@@ -261,14 +291,16 @@ class _WeekScheduleState extends State<WeekSchedule> {
   void initState() {
     table_stream.listen((event) => _updateTable(event));
 
-    vertical_lines = createLine(true, item_width);
-    horizontal_lines = createLine(false, item_width);
-    column_labels = createLabel(true, item_width);
-    row_labels = createLabel(false, item_width);
     main_item = createTableItem(true);
     tmp_item = [];
 
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    Future.delayed(Duration(milliseconds: 300));
+    super.dispose();
   }
 
   @override
@@ -288,37 +320,25 @@ class _WeekScheduleState extends State<WeekSchedule> {
               Positioned(
                   top: 0,
                   left: 0,
-                  child: Container(
-                      width: MediaQuery.of(context).size.width - 20,
-                      height: 24 + item_height * item_count,
-                      child: Column(children: vertical_lines)
-                  )
+                  child: VerticalLine()
               ),
               // 가로 구분선
               Positioned(
                   top: 0,
                   left: 0,
-                  child: Container(
-                      width: MediaQuery.of(context).size.width - 20,
-                      height: 24 + item_height * item_count,
-                      child: Row(children: horizontal_lines)
-                  )
+                  child: HorizontalLine()
               ),
               // 열의 라벨
               Positioned(
                   top: 0,
                   left: 22,
-                  width: MediaQuery.of(context).size.width - 20,
-                  height: 24,
-                  child: Row(children: column_labels)
+                  child: ColumnLabel(),
               ),
               // 행의 라벨
               Positioned(
                   top: 24,
                   left: 0,
-                  width: 22,
-                  height: item_height * item_count,
-                  child: Column(children: row_labels)
+                  child: RowLabel(),
               ),
               // 테이블 데이터
               Positioned(
@@ -347,3 +367,5 @@ class _WeekScheduleState extends State<WeekSchedule> {
     );
   }
 }
+
+

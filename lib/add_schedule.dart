@@ -53,10 +53,12 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
 
   // 입력란 삭제 매서드
   void _removeInputField(int idx) {
-    setState(() {
-      time_place.remove(idx);
-      _input_fields.remove(idx);
-    });
+    if (mounted) {
+      setState(() {
+        time_place.remove(idx);
+        _input_fields.remove(idx);
+      });
+    }
   }
 
   // 데이터 입력칸
@@ -116,9 +118,6 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
 
   // 주간 일정 등록 매서드
   void _register() {
-    if (FocusScope.of(context).hasFocus)
-      FocusScope.of(context).unfocus();
-
     if (_text_ctr.text.isEmpty) {
       Fluttertoast.showToast(
           msg: "이름을 등록해 주세요",
@@ -199,74 +198,88 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        child: SafeArea(
-          child: GestureDetector(
-            onTap: () => FocusScope.of(context).unfocus(),
-            child:  Column(
-              mainAxisSize: MainAxisSize.max,
-              children: [
-                // 앱 바
-                Container(
-                  height: 50,
-                  child: Stack(children: [
-                    // 뒤로가기 버튼
-                    Positioned(
-                      bottom: 5, left: 15,
-                      child: GestureDetector(
-                          onTap: () {
-                            time_place.clear();
-                            Navigator.pop(context);
-                          },
-                          child: Icon(Icons.close, size: _appbar_size)),
-                    ),
-                    // 타이틀
-                    Positioned(
-                      bottom: 5, left: 45,
-                      child: Text(
-                        "일정 생성",
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: medium,
-                          fontSize: font_size[1]))),
-                    // 생성하기 버튼
-                    Positioned(
-                      bottom: 2, right: 15,
-                      child: GestureDetector(
-                          onTap: _register,
-                          child: Icon(Icons.arrow_circle_up, size: 32)))
-                  ])
-                ),
-                // 테이블
-                Flexible(
-                  flex: 7,
-                  child: Container(
-                    margin: EdgeInsets.symmetric(vertical: 5),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10)
-                    ),
-                    child: WeekSchedule(touchable: false),
-                  )
-                ),
-                // 세부 내용
-                Flexible(
-                  flex: 6,
-                  child: Container(
-                    margin: EdgeInsets.fromLTRB(15, 5, 15, 20),
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: _setInputField()
+    return WillPopScope(
+      onWillPop: () async {
+        if (widget.data != null) _register();
+        else Navigator.pop(context);
+        return false;
+      },
+      child: Scaffold(
+        body: Container(
+          child: SafeArea(
+            child: GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child:  Column(
+                mainAxisSize: MainAxisSize.max,
+                children: [
+                  // 앱 바
+                  Container(
+                    height: 50,
+                    child: Stack(children: [
+                      // 뒤로가기 버튼
+                      Positioned(
+                        bottom: 5, left: 15,
+                        child: GestureDetector(
+                            onTap: () {
+                              if (widget.data != null) _register();
+                              else {
+                                time_place.clear();
+                                Navigator.pop(context);
+                              }
+                            },
+                            child: Icon(Icons.close, size: _appbar_size)),
+                      ),
+                      // 타이틀
+                      Positioned(
+                        bottom: 5, left: 45,
+                        child: Text(
+                          "일정 생성",
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: medium,
+                            fontSize: font_size[1]))),
+                      // 생성하기 버튼
+                      Positioned(
+                        bottom: 2, right: 15,
+                        child: GestureDetector(
+                            onTap: () {
+                              if (FocusScope.of(context).hasFocus)
+                                FocusScope.of(context).unfocus();
+                              _register();
+                            },
+                            child: Icon(Icons.arrow_circle_up, size: 32)))
+                    ])
+                  ),
+                  // 테이블
+                  Flexible(
+                    flex: 7,
+                    child: Container(
+                      margin: EdgeInsets.symmetric(vertical: 5),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      child: WeekSchedule(touchable: false),
+                    )
+                  ),
+                  // 세부 내용
+                  Flexible(
+                    flex: 6,
+                    child: Container(
+                      margin: EdgeInsets.fromLTRB(15, 5, 15, 20),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: _setInputField()
+                        )
                       )
                     )
                   )
-                )
-              ]
+                ]
+              ),
             ),
           ),
-        ),
-      )
+        )
+      ),
     );
   }
 }
@@ -573,8 +586,9 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
             Positioned(
               child: TextField(
                   onChanged: (str) {
-                    _data.timeline.day = str;
+                    _data.timeline.place = str;
                     time_place[_data.key] = _data;
+                    table_sctr.add(false);
                   },
                   decoration: InputDecoration(
                       hintText: "장소",

@@ -15,9 +15,6 @@ class HomePage extends StatelessWidget
 
   @override
   Widget build(BuildContext context) {
-
-    item_width = (MediaQuery.of(context).size.width - 42) / 7;
-
     return Scaffold(
         body: Container(
             decoration: BoxDecoration(color: Color(app_background)),

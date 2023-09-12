@@ -10,7 +10,7 @@ import 'package:path_provider/path_provider.dart';
 ///
 /// 테스트용 출력
 ///
-const bool isTest = true;
+const bool isTest = false;
 void printForTest(String content) {
   if (isTest) print("[@] $content");
 }
