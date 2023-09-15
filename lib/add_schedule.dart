@@ -11,8 +11,10 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 
 const double _appbar_size = 22;  // 상단바 크기
+final TextEditingController _text_ctr = TextEditingController();  // 이름 입력란 컨트롤러
 
 // 시간과 장소 객체
+Map<int, _Data> time_place = {};
 class _Data {
   _Data(this.key, this.timeline);
 
@@ -20,104 +22,14 @@ class _Data {
   final Timeline timeline;
 }
 
-// 데이터
-Map<int, _Data> time_place = {};
-
-
-
 // 메인
-class AddSchedulePage extends StatefulWidget {
+class AddSchedulePage extends StatelessWidget {
   const AddSchedulePage({super.key, this.data = null});
 
   final Map<String, dynamic>? data;
 
-  @override
-  State<AddSchedulePage> createState() => _AddSchedulePageState();
-}
-class _AddSchedulePageState extends State<AddSchedulePage> {
-
-  // 수정인지 확인
-  bool fix = true;
-
-  // 이름 입력란 컨트롤러
-  final TextEditingController _text_ctr = TextEditingController();
-
-  // 스트림 수용자
-  final Stream<int> remove_stream = remove_sctr.stream;
-
-  // 리스트 길이
-  int length = 0;
-
-  // 입력란 리스트
-  Map<int, TimeAndPlace> _input_fields = {};
-
-  // 입력란 삭제 매서드
-  void _removeInputField(int idx) {
-    if (mounted) {
-      setState(() {
-        time_place.remove(idx);
-        _input_fields.remove(idx);
-      });
-    }
-  }
-
-  // 데이터 입력칸
-  List<Widget> _setInputField() {
-    List<Widget> ret = [
-      Container(
-          height: item_height,
-          child: TextField(
-              controller: _text_ctr,
-              decoration: InputDecoration(
-                  hintText: "이름",
-                  hintStyle: TextStyle(
-                      fontWeight: medium,
-                      fontSize: font_size[1],
-                      color: Color(text_color_2)))
-          )
-      )
-    ];
-    if (_input_fields.length > 0)
-      _input_fields.values.forEach((e) => ret.add(e));
-    ret.add(Container(
-        height: item_height,
-        alignment: Alignment.bottomLeft,
-        child: GestureDetector(
-            onTap: () {
-              setState(() {
-                if (FocusScope.of(context).hasFocus)
-                  FocusScope.of(context).unfocus();
-                time_place[length] = _Data(
-                  length,
-                  Timeline(
-                    top: 720,
-                    w: item_width,
-                    h: 60,
-                    day: "월요일",
-                    start: DateTime(0, 1, 1, 12, 0),
-                    end: DateTime(0, 1, 1, 13, 0),
-                    name: "",
-                    place: "",
-                    color: 0xFFFFFFFF
-                  )
-                );
-                _input_fields[length] = TimeAndPlace(key: ValueKey<int>(length++));
-                table_sctr.add(false);
-              });
-            },
-            child: Text(
-                "시간 및 장소 추가",
-                style: TextStyle(
-                    fontSize: font_size[1],
-                    fontWeight: regular,
-                    color: Colors.red)))
-    ));
-    printForTest("d ${ret.toString()}");
-    return ret;
-  }
-
   // 주간 일정 등록 매서드
-  void _register() {
+  void _register(BuildContext context) {
     if (_text_ctr.text.isEmpty) {
       Fluttertoast.showToast(
           msg: "이름을 등록해 주세요",
@@ -182,108 +94,178 @@ class _AddSchedulePageState extends State<AddSchedulePage> {
     }
   }
 
-  @override
-  void initState() {
-    if (widget.data != null) {
-      _text_ctr.text = widget.data!["name"];
-      (widget.data!["time_and_place"] as List<Timeline>).forEach((e) {
-        time_place[length] = _Data(length, e);
-        _input_fields[length] = TimeAndPlace(key: ValueKey<int>(length++));
-      });
-    }
-    printForTest(_input_fields.toString());
-    remove_stream.listen((int idx) => _removeInputField(idx));
-    super.initState();
+  // 수정할 경우
+  void setInit() {
+    int tmp = 0;
+    _text_ctr.text = data!["name"];
+    (data!["time_and_place"] as List<Timeline>)
+        .forEach((e) => time_place[tmp] = _Data(tmp++, e));
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        if (widget.data != null) _register();
-        else Navigator.pop(context);
-        return false;
-      },
-      child: Scaffold(
+    if (data != null) setInit();
+    return Scaffold(
         body: Container(
           child: SafeArea(
             child: GestureDetector(
               onTap: () => FocusScope.of(context).unfocus(),
               child:  Column(
-                mainAxisSize: MainAxisSize.max,
-                children: [
-                  // 앱 바
-                  Container(
-                    height: 50,
-                    child: Stack(children: [
-                      // 뒤로가기 버튼
-                      Positioned(
-                        bottom: 5, left: 15,
-                        child: GestureDetector(
-                            onTap: () {
-                              if (widget.data != null) _register();
-                              else {
-                                time_place.clear();
-                                Navigator.pop(context);
-                              }
-                            },
-                            child: Icon(Icons.close, size: _appbar_size)),
-                      ),
-                      // 타이틀
-                      Positioned(
-                        bottom: 5, left: 45,
-                        child: Text(
-                          "일정 생성",
-                          style: TextStyle(
-                            color: Colors.black,
-                            fontWeight: medium,
-                            fontSize: font_size[1]))),
-                      // 생성하기 버튼
-                      Positioned(
-                        bottom: 2, right: 15,
-                        child: GestureDetector(
-                            onTap: () {
-                              if (FocusScope.of(context).hasFocus)
-                                FocusScope.of(context).unfocus();
-                              _register();
-                            },
-                            child: Icon(Icons.arrow_circle_up, size: 32)))
-                    ])
-                  ),
-                  // 테이블
-                  Flexible(
-                    flex: 7,
-                    child: Container(
-                      margin: EdgeInsets.symmetric(vertical: 5),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      child: WeekSchedule(touchable: false),
-                    )
-                  ),
-                  // 세부 내용
-                  Flexible(
-                    flex: 6,
-                    child: Container(
-                      margin: EdgeInsets.fromLTRB(15, 5, 15, 20),
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: _setInputField()
+                  mainAxisSize: MainAxisSize.max,
+                  children: [
+                    // 앱 바
+                    Container(
+                        height: 50,
+                        child: Stack(children: [
+                          // 뒤로가기 버튼
+                          Positioned(
+                            bottom: 5, left: 15,
+                            child: GestureDetector(
+                                onTap: () {
+                                  if (data != null) _register(context);
+                                  else {
+                                    time_place.clear();
+                                    Navigator.pop(context);
+                                  }
+                                },
+                                child: Icon(Icons.close, size: _appbar_size)),
+                          ),
+                          // 타이틀
+                          Positioned(
+                              bottom: 5, left: 45,
+                              child: Text(
+                                  "일정 생성",
+                                  style: TextStyle(
+                                      color: Colors.black,
+                                      fontWeight: medium,
+                                      fontSize: font_size[1]))),
+                          // 생성하기 버튼
+                          Positioned(
+                              bottom: 2, right: 15,
+                              child: GestureDetector(
+                                  onTap: () {
+                                    if (FocusScope.of(context).hasFocus)
+                                      FocusScope.of(context).unfocus();
+                                    _register(context);
+                                  },
+                                  child: Icon(Icons.arrow_circle_up, size: 32)))
+                        ])
+                    ),
+                    // 테이블
+                    Flexible(
+                        flex: 7,
+                        child: Container(
+                          margin: EdgeInsets.symmetric(vertical: 5),
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(10)
+                          ),
+                          // child: const WeekSchedule(tmp_display: true),
                         )
-                      )
+                    ),
+                    // 입력란
+                    Flexible(
+                        flex: 6,
+                        child: Container(
+                            margin: EdgeInsets.fromLTRB(15, 5, 15, 20),
+                            child: const InputTP()
+                        )
                     )
-                  )
-                ]
+                  ]
               ),
             ),
           ),
         )
-      ),
     );
   }
 }
 
+// 입력란
+class InputTP extends StatefulWidget {
+  const InputTP({super.key});
+
+  @override
+  State<InputTP> createState() => _InputTPState();
+}
+class _InputTPState extends State<InputTP> {
+
+  final ScrollController scr_ctr = ScrollController();
+  final Stream<int> remove_stream = remove_sctr.stream;
+
+  int length = 0;
+
+  // 입력란 삭제 매서드
+  void _removeInputField(int idx) {
+    if (mounted)
+      setState(() => time_place.remove(idx));
+  }
+
+  @override
+  void initState() {
+    remove_stream.listen((int idx) => _removeInputField(idx));
+    length = time_place.length;
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+        controller: scr_ctr,
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 이름 입력
+              Container(
+                  height: item_height,
+                  child: TextField(
+                      controller: _text_ctr,
+                      decoration: InputDecoration(
+                          hintText: "이름",
+                          hintStyle: TextStyle(
+                              fontWeight: medium,
+                              fontSize: font_size[1],
+                              color: Color(text_color_2))))
+              ),
+              // 시간 및 장소 입력
+              Column(children: ),
+              // 아이템 추가 버튼
+              Container(
+                  height: item_height,
+                  alignment: Alignment.bottomLeft,
+                  child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          if (FocusScope.of(context).hasFocus)
+                            FocusScope.of(context).unfocus();
+                          time_place[length] = _Data(
+                              length,
+                              Timeline(
+                                  top: 720,
+                                  w: item_width,
+                                  h: 60,
+                                  day: "월요일",
+                                  start: DateTime(0, 1, 1, 12, 0),
+                                  end: DateTime(0, 1, 1, 13, 0),
+                                  name: "",
+                                  place: "",
+                                  color: 0xFFFFFFFF
+                              )
+                          );
+                          table_sctr.add(false);
+                          length++;
+                        });
+                      },
+                      child: Text(
+                          "시간 및 장소 추가",
+                          style: TextStyle(
+                              fontSize: font_size[1],
+                              fontWeight: regular,
+                              color: Colors.red)))
+              )
+            ]
+        )
+    );
+  }
+}
 
 
 // 때와 장소

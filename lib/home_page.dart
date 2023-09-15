@@ -31,7 +31,7 @@ class HomePage extends StatelessWidget
                             child: Text("주간 일정",
                                 style: TextStyle(
                                     color: Color(text_color_1),
-                                    fontSize: font_size[2],
+                                    fontSize: 22,
                                     fontWeight: medium))),
                         Positioned(
                             bottom: 0,
@@ -61,7 +61,7 @@ class HomePage extends StatelessWidget
                                     size: appbar_size))),
                       ])),
                   // 시간표
-                  Expanded(child: WeekSchedule(touchable: true))
+                  const Expanded(child: WeekSchedule(tmp_display: false))
                 ]))
         )
     );

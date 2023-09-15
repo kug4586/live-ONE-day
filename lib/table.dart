@@ -24,8 +24,65 @@ Map<String, List<TableItem>> tmp_data = {
   "일요일" : []
 };
 
+// 메인 테이블 데이터
+class TableData extends StatefulWidget {
+  const TableData({super.key, required this.isTmp});
+
+  final bool isTmp;
+
+  @override
+  State<TableData> createState() => _TableDataState();
+}
+class _TableDataState extends State<TableData> {
+
+  // 테이블 아이템 리스트 생성
+  List<Widget> _createTableItem(bool b) {
+    return ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+        .map((e) => Container(
+        width: item_width,
+        child: Stack(children: b ? tmp_data[e]! : table_data[e]!)
+    )).toList();
+  }
+
+  // 테이블 업데이트
+  void _updateTable(bool b) {
+    if (mounted) {
+      setState(() {
+        if (b) {
+          ary = _createTableItem(true);
+          ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+              .forEach((day) => tmp_data[day]!.clear());
+        }
+        else {
+          ary = _createTableItem(false);
+        }
+      });
+    }
+  }
+
+  //
+  final Stream<bool> table_stream = table_sctr.stream;
+  List<Widget> ary = [];
+
+  @override
+  void initState() {
+    table_stream.listen((event) => _updateTable(event));
+    ary = _createTableItem(widget.isTmp);
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+        width: MediaQuery.of(context).size.width - 42,
+        height: item_height * item_count,
+        child: Row(children: ary)
+    );
+  }
+}
+
 // 테이블 아이템
-class TableItem extends StatefulWidget {
+class TableItem extends StatelessWidget {
   const TableItem({
     super.key,
     required this.timeline,
@@ -35,13 +92,8 @@ class TableItem extends StatefulWidget {
   final Timeline timeline;
   final bool isTmp;
 
-  @override
-  State<TableItem> createState() => _TableItemState();
-}
-class _TableItemState extends State<TableItem> {
-
   // 일정 보여주기
-  void _showSchedule(Timeline timeline) {
+  void _showSchedule(Timeline timeline, BuildContext context) {
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -73,7 +125,7 @@ class _TableItemState extends State<TableItem> {
                     ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
                         .forEach((day) {
                           table_data[day]!.removeWhere(
-                                  (item) => item.timeline.name == timeline.name);
+                                  (item) => timeline.name == timeline.name);
                         });
 
                     Navigator.pop(context);
@@ -111,33 +163,33 @@ class _TableItemState extends State<TableItem> {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-        top: widget.timeline.top,
+        top: timeline.top,
         child: GestureDetector(
-          onTap: () => _showSchedule(widget.timeline),
+          onTap: () => _showSchedule(timeline, context),
           child: Container(
-              width: (widget.timeline.isSunday() && widget.timeline.top > 1425)
-                  ? widget.timeline.w - widget.timeline.top + 1420
-                  : widget.timeline.w,
-              height: widget.timeline.h,
+              width: (timeline.isSunday() && timeline.top > 1425)
+                  ? timeline.w - timeline.top + 1420
+                  : timeline.w,
+              height: timeline.h,
               alignment: Alignment.topLeft,
               padding: EdgeInsets.fromLTRB(4, 2, 2, 2),
               decoration: BoxDecoration(
-                  color: widget.isTmp ? Color(tmp_color) : widget.timeline.getColortoWidget(),
-                  borderRadius: (widget.timeline.isSunday() && widget.timeline.top + widget.timeline.h >= 1425)
-                      ? BorderRadius.only(bottomRight: Radius.circular(widget.timeline.top + widget.timeline.h - 1425))
+                  color: isTmp ? Color(tmp_color) : timeline.getColortoWidget(),
+                  borderRadius: (timeline.isSunday() && timeline.top + timeline.h >= 1425)
+                      ? BorderRadius.only(bottomRight: Radius.circular(timeline.top + timeline.h - 1425))
                       : null
               ),
               child: Wrap(children: [
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(widget.isTmp ? "" : widget.timeline.name,
+                    Text(isTmp ? "" : timeline.name,
                         style: TextStyle(
                             fontSize: 14,
                             fontWeight: medium,
                             color: Colors.white)),
                     SizedBox(height: 4),
-                    Text(widget.isTmp ? "" : widget.timeline.place,
+                    Text(isTmp ? "" : timeline.place,
                       style: TextStyle(
                           fontSize: 12,
                           fontWeight: regular,
@@ -149,13 +201,6 @@ class _TableItemState extends State<TableItem> {
         )
     );
   }
-}
-List<Widget> createTableItem(bool b) {
-  return ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
-      .map((e) => Container(
-      width: item_width,
-      child: Stack(children: b ? table_data[e]! : tmp_data[e]!)
-  )).toList();
 }
 
 // 구분선
@@ -183,7 +228,7 @@ class HorizontalLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
         width: MediaQuery.of(context).size.width - 20,
         height: 24 + item_height * item_count,
         child: Row(children: List.generate(7, (index) {
@@ -204,7 +249,7 @@ class ColumnLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
         width: MediaQuery.of(context).size.width - 42,
         height: 24,
         child: Row(
@@ -231,7 +276,7 @@ class RowLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SizedBox(
         width: 22,
         height: item_height * item_count,
         child: Column(children: List.generate(24, (index) {
@@ -251,121 +296,62 @@ class RowLabel extends StatelessWidget {
   }
 }
 
-// 메인
-class WeekSchedule extends StatefulWidget {
-  const WeekSchedule({super.key, required this.touchable});
-
-  final bool touchable;
-
-  @override
-  State<WeekSchedule> createState() => _WeekScheduleState();
-}
-class _WeekScheduleState extends State<WeekSchedule> {
-
-  late List<Widget> main_item;
-  late List<Widget> tmp_item;
-
-  // 스트림 수용자
-  final Stream<bool> table_stream = table_sctr.stream;
-
-  // 테이블 업데이트
-  void _updateTable(bool b) {
-    if (mounted) {
-      setState(() {
-        if (b) {
-          printForTest("call true");
-          main_item = createTableItem(true);
-          ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
-              .forEach((day) => tmp_data[day]!.clear());
-          tmp_item.clear();
-        }
-        else {
-          printForTest("call false");
-          tmp_item = createTableItem(false);
-        }
-      });
-    }
-  }
-
-  @override
-  void initState() {
-    table_stream.listen((event) => _updateTable(event));
-
-    main_item = createTableItem(true);
-    tmp_item = [];
-
-    super.initState();
-  }
-
-  @override
-  void dispose() {
-    Future.delayed(Duration(milliseconds: 300));
-    super.dispose();
-  }
+// 레이아웃
+class WeekSchedule extends StatelessWidget {
+  const WeekSchedule({super.key, required this.tmp_display});
+  
+  final bool tmp_display;
 
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
-      child: IgnorePointer(
-        ignoring: !widget.touchable,
-        child: Container(
-            width: MediaQuery.of(context).size.width,
-            height: 24 + item_height * item_count,
-            margin: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-            decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Color(line_color), width: 1)),
-            child: Stack(children: [
-              // 세로 구분선
-              Positioned(
-                  top: 0,
-                  left: 0,
-                  child: VerticalLine()
-              ),
-              // 가로 구분선
-              Positioned(
-                  top: 0,
-                  left: 0,
-                  child: HorizontalLine()
-              ),
-              // 열의 라벨
-              Positioned(
-                  top: 0,
-                  left: 22,
-                  child: ColumnLabel(),
-              ),
-              // 행의 라벨
-              Positioned(
-                  top: 24,
-                  left: 0,
-                  child: RowLabel(),
-              ),
-              // 테이블 데이터
-              Positioned(
+      child: Container(
+          width: MediaQuery.of(context).size.width,
+          height: 24 + item_height * item_count,
+          margin: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: Color(line_color), width: 1)),
+          child: Stack(children: [
+            // 세로 구분선
+            const Positioned(
+                top: 0,
+                left: 0,
+                child: VerticalLine()
+            ),
+            // 가로 구분선
+            const Positioned(
+                top: 0,
+                left: 0,
+                child: HorizontalLine()
+            ),
+            // 열의 라벨
+            const Positioned(
+              top: 0,
+              left: 22,
+              child: ColumnLabel(),
+            ),
+            // 행의 라벨
+            const Positioned(
+              top: 24,
+              left: 0,
+              child: RowLabel(),
+            ),
+            // 테이블 데이터
+            const Positioned(
                 top: 24,
                 left: 22,
-                child: Container(
-                    width: MediaQuery.of(context).size.width - 42,
-                    height: item_height * item_count,
-                    child: Row(mainAxisSize: MainAxisSize.max, children: main_item)
-                )
-              ),
-              // 일정 추가 때만 보이는 박스
-              if (!widget.touchable)
-                Positioned(
+                child: TableData(isTmp: false)
+            ),
+            // 테이블 데이터
+            if (tmp_display)
+              const Positioned(
                   top: 24,
                   left: 22,
-                  child: Container(
-                      width: MediaQuery.of(context).size.width - 42,
-                      height: item_height * item_count,
-                      child: Row(mainAxisSize: MainAxisSize.max, children: tmp_item)
-                  )
-                )
-            ])
-        ),
-      ),
+                  child: TableData(isTmp: true)
+              )
+          ])
+      )
     );
   }
 }
-
-

@@ -15,9 +15,6 @@ Future<void> main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  onWillPop() {
-  }
-
   @override
   Widget build(BuildContext context) {
     loadData();
@@ -25,7 +22,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: '하루살아',
-      home: HomePage()
+      home: const HomePage()
     );
   }
 }
