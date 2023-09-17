@@ -80,6 +80,7 @@ class AddSchedulePage extends StatelessWidget {
         table_data.forEach((key, value) => printForTest("${key} : ${value.length}"));
         // 캐시 삭제
         time_place.clear();
+        _text_ctr.text = "";
         // 테이블 반영
         table_sctr.add(true);
         // Add Schedule 페이지 삭제
@@ -159,7 +160,7 @@ class AddSchedulePage extends StatelessWidget {
                           decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(10)
                           ),
-                          // child: const WeekSchedule(tmp_display: true),
+                          child: const WeekSchedule(tmp_display: true),
                         )
                     ),
                     // 입력란
@@ -192,17 +193,22 @@ class _InputTPState extends State<InputTP> {
   final Stream<int> remove_stream = remove_sctr.stream;
 
   int length = 0;
+  List<TimeAndPlace> _ary = [];
 
   // 입력란 삭제 매서드
   void _removeInputField(int idx) {
     if (mounted)
-      setState(() => time_place.remove(idx));
+      setState(() {
+        time_place.remove(idx);
+        _ary.removeWhere((e) => (e.key as ValueKey<int>).value == idx);
+      });
   }
 
   @override
   void initState() {
     remove_stream.listen((int idx) => _removeInputField(idx));
-    length = time_place.length;
+    time_place.values.forEach(
+            (e) => _ary.add(TimeAndPlace(key: ValueKey<int>(length++))));
     super.initState();
   }
 
@@ -226,7 +232,7 @@ class _InputTPState extends State<InputTP> {
                               color: Color(text_color_2))))
               ),
               // 시간 및 장소 입력
-              Column(children: ),
+              Column(children: _ary),
               // 아이템 추가 버튼
               Container(
                   height: item_height,
@@ -250,7 +256,7 @@ class _InputTPState extends State<InputTP> {
                                   color: 0xFFFFFFFF
                               )
                           );
-                          table_sctr.add(false);
+                          _ary.add(TimeAndPlace(key: ValueKey<int>(length)));
                           length++;
                         });
                       },
@@ -295,8 +301,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                       .map((e) => GestureDetector(
                     onTap: () {
                       setState(() {
-                        tmp_data[_data.timeline.day]?.removeWhere(
-                                (item) => item.timeline.start == _data.timeline.start && item.timeline.end == _data.timeline.end);
+                        tmp_data[_data.timeline.day]?.removeWhere((e) => (e.key as ValueKey).value == _data.key);
                         _data.timeline.day = e;
                         time_place[_data.key] = _data;
                         tmp_data[_data.timeline.day]?.add(TableItem(timeline: _data.timeline, isTmp: true));
@@ -322,7 +327,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
   }
 
   // 시간 선택창 띄우기
-  void _selectTime(bool isStart, DateTime t) {
+  void _selectTime(bool isStart, DateTime t){
     showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -408,8 +413,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                 margin: EdgeInsets.symmetric(horizontal: 15, vertical: 15),
                 child: GestureDetector(
                   onTap: () {
-                    tmp_data[_data.timeline.day]?.removeWhere(
-                            (e) => e.timeline.top == _data.timeline.top && e.timeline.h == _data.timeline.h);
+                    tmp_data[_data.timeline.day]?.removeWhere((e) => (e.key as ValueKey).value == _data.key);
 
                     // 만약 시작 시간 정하는데, 현재 끝 시간보다 나중이거나 같다면
                     if (isStart && !_data.timeline.start.isBefore(_data.timeline.end)) {
@@ -466,7 +470,8 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
   @override
   void initState() {
     _data = time_place[(widget.key as ValueKey).value]!;
-    tmp_data[_data.timeline.day]?.add(TableItem(timeline: _data.timeline, isTmp: true));
+    tmp_data[_data.timeline.day]?.add(
+        TableItem(key: ValueKey<int>(_data.key), timeline: _data.timeline, isTmp: true));
     table_sctr.add(false);
     super.initState();
   }
@@ -570,7 +575,6 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                   onChanged: (str) {
                     _data.timeline.place = str;
                     time_place[_data.key] = _data;
-                    table_sctr.add(false);
                   },
                   decoration: InputDecoration(
                       hintText: "장소",
@@ -588,8 +592,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                     onTap: () {
                       setState(() {
                         remove_sctr.add((widget.key as ValueKey).value);
-                        tmp_data[_data.timeline.day]?.removeWhere(
-                                (e) => e.timeline.start == _data.timeline.start && e.timeline.end == _data.timeline.end);
+                        tmp_data[_data.timeline.day]?.removeWhere((e) => (e.key as ValueKey).value == _data.key);
                         table_sctr.add(false);
                       });
                     },

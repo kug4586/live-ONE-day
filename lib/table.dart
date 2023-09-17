@@ -40,7 +40,7 @@ class _TableDataState extends State<TableData> {
     return ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
         .map((e) => Container(
         width: item_width,
-        child: Stack(children: b ? tmp_data[e]! : table_data[e]!)
+        child: Stack(children: b ? table_data[e]! : tmp_data[e]!)
     )).toList();
   }
 
@@ -49,25 +49,29 @@ class _TableDataState extends State<TableData> {
     if (mounted) {
       setState(() {
         if (b) {
+          printForTest("call updateTable - true");
           ary = _createTableItem(true);
           ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
               .forEach((day) => tmp_data[day]!.clear());
         }
         else {
+          printForTest("call updateTable - false");
           ary = _createTableItem(false);
+          <String>["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+              .forEach((day) => printForTest(tmp_data[day]!.length.toString()));
         }
       });
     }
   }
 
-  //
+  // 이 위젯의 핵심 변수들
   final Stream<bool> table_stream = table_sctr.stream;
   List<Widget> ary = [];
 
   @override
   void initState() {
     table_stream.listen((event) => _updateTable(event));
-    ary = _createTableItem(widget.isTmp);
+    ary = _createTableItem(!widget.isTmp);
     super.initState();
   }
 
@@ -338,17 +342,23 @@ class WeekSchedule extends StatelessWidget {
               child: RowLabel(),
             ),
             // 테이블 데이터
-            const Positioned(
+            Positioned(
                 top: 24,
                 left: 22,
-                child: TableData(isTmp: false)
+                child: IgnorePointer(
+                  ignoring: tmp_display,
+                  child: TableData(isTmp: false)
+                )
             ),
             // 테이블 데이터
             if (tmp_display)
               const Positioned(
                   top: 24,
                   left: 22,
-                  child: TableData(isTmp: true)
+                  child: IgnorePointer(
+                    ignoring: true,
+                    child: TableData(isTmp: true)
+                  )
               )
           ])
       )

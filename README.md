@@ -1,16 +1,14 @@
-# live_one_day
+# 하루살아
 
-하루살아
+### 짭? 에타 시간표
 
-## Getting Started
+<br>
 
-This project is a starting point for a Flutter application.
+## 0.1.1 ver
 
-A few resources to get you started if this is your first Flutter project:
+### [성능 개선]
+\- 일정 추가 시, 버벅이는 현상을 줄임  
+\- 같은 일정, 시간의 일정들이 동시에 수정되는 버그를 수정함  
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### [버그 내역]
+\- 일정 수정 시, 기존에 있던 일정이 사라짐
