@@ -2,6 +2,11 @@
 
 ### 짭? 에타 시간표
 
+<div>
+  <img src="https://github.com/kug4586/live-ONE-day/assets/94284939/aaf8db49-bec1-4e92-91a9-34ba023af246">
+  <img src="https://github.com/kug4586/live-ONE-day/assets/94284939/14a51c04-353b-46a4-95f3-e0f7c6672bbc">
+</div>
+
 <br>
 
 ## 0.1.1 ver
