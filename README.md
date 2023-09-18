@@ -2,11 +2,6 @@
 
 ### 짭? 에타 시간표
 
-<div>
-  <img src="https://github.com/kug4586/live-ONE-day/assets/94284939/aaf8db49-bec1-4e92-91a9-34ba023af246">
-  <img src="https://github.com/kug4586/live-ONE-day/assets/94284939/14a51c04-353b-46a4-95f3-e0f7c6672bbc">
-</div>
-
 <br>
 
 ## 0.1.1 ver
@@ -17,3 +12,10 @@
 
 ### [버그 내역]
 \- 일정 수정 시, 기존에 있던 일정이 사라짐
+
+<br>
+
+## 개발자 노트
+
+### 향후 계획
+[하루 일정] 추가 > 바탕화면 위젯 추가 > [To do list] 추가 > [알람] 추가 > [월간 일정] 추가
