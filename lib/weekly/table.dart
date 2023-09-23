@@ -1,19 +1,10 @@
-import 'package:live_one_day/add_schedule.dart';
+import 'package:live_one_day/weekly/add_weekly.dart';
 import 'package:live_one_day/config.dart';
 
 import 'package:flutter/material.dart';
 
 
 // 테이블 데이터
-Map<String, List<TableItem>> table_data = {
-  "월요일" : [],
-  "화요일" : [],
-  "수요일" : [],
-  "목요일" : [],
-  "금요일" : [],
-  "토요일" : [],
-  "일요일" : []
-};
 Map<String, List<TableItem>> tmp_data = {
   "월요일" : [],
   "화요일" : [],
@@ -23,43 +14,88 @@ Map<String, List<TableItem>> tmp_data = {
   "토요일" : [],
   "일요일" : []
 };
-
-// 메인 테이블 데이터
-class TableData extends StatefulWidget {
-  const TableData({super.key, required this.isTmp});
-
-  final bool isTmp;
+class TableDataTmp extends StatefulWidget {
+  const TableDataTmp({super.key});
 
   @override
-  State<TableData> createState() => _TableDataState();
+  State<TableDataTmp> createState() => _TableDataTmpState();
 }
-class _TableDataState extends State<TableData> {
+class _TableDataTmpState extends State<TableDataTmp> {
 
   // 테이블 아이템 리스트 생성
-  List<Widget> _createTableItem(bool b) {
+  List<Widget> _createTableItem() {
     return ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
         .map((e) => Container(
         width: item_width,
-        child: Stack(children: b ? table_data[e]! : tmp_data[e]!)
+        child: Stack(children: tmp_data[e]!)
     )).toList();
   }
 
   // 테이블 업데이트
   void _updateTable(bool b) {
-    if (mounted) {
+    if (b == false && mounted) {
+      setState(() => ary = _createTableItem());
+    }
+  }
+
+  // 이 위젯의 핵심 변수들
+  final Stream<bool> table_stream = table_sctr.stream;
+  List<Widget> ary = [];
+
+  @override
+  void initState() {
+    table_stream.listen((event) => _updateTable(event));
+    ary = _createTableItem();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      ignoring: true,
+      child: Container(
+          width: MediaQuery.of(context).size.width - 42,
+          height: item_height * item_count,
+          child: Row(children: ary)
+      ),
+    );
+  }
+}
+
+// 메인 테이블 데이터
+Map<String, List<TableItem>> table_data = {
+  "월요일" : [],
+  "화요일" : [],
+  "수요일" : [],
+  "목요일" : [],
+  "금요일" : [],
+  "토요일" : [],
+  "일요일" : []
+};
+class TableDataMain extends StatefulWidget {
+  const TableDataMain({super.key});
+
+  @override
+  State<TableDataMain> createState() => _TableDataMainState();
+}
+class _TableDataMainState extends State<TableDataMain> {
+
+  // 테이블 아이템 리스트 생성
+  List<Widget> _createTableItem() {
+    return ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+        .map((e) => Container(
+        width: item_width,
+        child: Stack(children: table_data[e]!)
+    )).toList();
+  }
+
+  // 테이블 업데이트
+  void _updateTable(bool b) {
+    if (b == true && mounted) {
       setState(() {
-        if (b) {
-          printForTest("call updateTable - true");
-          ary = _createTableItem(true);
-          ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
-              .forEach((day) => tmp_data[day]!.clear());
-        }
-        else {
-          printForTest("call updateTable - false");
-          ary = _createTableItem(false);
-          <String>["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
-              .forEach((day) => printForTest(tmp_data[day]!.length.toString()));
-        }
+        ary = _createTableItem();
+        ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
+            .forEach((day) => tmp_data[day]!.clear());
       });
     }
   }
@@ -71,7 +107,7 @@ class _TableDataState extends State<TableData> {
   @override
   void initState() {
     table_stream.listen((event) => _updateTable(event));
-    ary = _createTableItem(!widget.isTmp);
+    ary = _createTableItem();
     super.initState();
   }
 
@@ -347,7 +383,7 @@ class WeekSchedule extends StatelessWidget {
                 left: 22,
                 child: IgnorePointer(
                   ignoring: tmp_display,
-                  child: TableData(isTmp: false)
+                  child: TableDataMain()
                 )
             ),
             // 테이블 데이터
@@ -355,10 +391,7 @@ class WeekSchedule extends StatelessWidget {
               const Positioned(
                   top: 24,
                   left: 22,
-                  child: IgnorePointer(
-                    ignoring: true,
-                    child: TableData(isTmp: true)
-                  )
+                  child: TableDataTmp()
               )
           ])
       )

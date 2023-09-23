@@ -4,7 +4,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:live_one_day/table.dart';
+import 'package:live_one_day/weekly/table.dart';
 import 'package:path_provider/path_provider.dart';
 
 ///

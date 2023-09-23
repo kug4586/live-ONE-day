@@ -1,14 +1,13 @@
 import 'package:live_one_day/config.dart';
-import 'package:live_one_day/table.dart';
-import 'package:live_one_day/add_schedule.dart';
+import 'package:live_one_day/weekly/table.dart';
 import 'package:live_one_day/setting_page.dart';
 
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-class HomePage extends StatelessWidget
+class MainFrame extends StatelessWidget
     with WidgetsBindingObserver {
-  const HomePage({super.key});
+  const MainFrame({super.key});
 
   // 상단바 크기
   static double appbar_size = 32;
@@ -39,10 +38,10 @@ class HomePage extends StatelessWidget
                             child: GestureDetector(
                                 onTap: () {
                                   Fluttertoast.showToast(
-                                    msg: "아직 준비 중 입니다...",
-                                    toastLength: Toast.LENGTH_SHORT,
-                                    gravity: ToastGravity.BOTTOM,
-                                    timeInSecForIosWeb: 1
+                                      msg: "아직 준비 중 입니다...",
+                                      toastLength: Toast.LENGTH_SHORT,
+                                      gravity: ToastGravity.BOTTOM,
+                                      timeInSecForIosWeb: 1
                                   );
                                 },
                                 child: Icon(
@@ -53,15 +52,12 @@ class HomePage extends StatelessWidget
                             width: appbar_size,
                             height: appbar_size,
                             child: GestureDetector(
-                                onTap: () =>
-                                    Navigator.push(context,
-                                        MaterialPageRoute(builder: (context) =>
-                                            AddSchedulePage())),
+                                onTap: () {},
                                 child: Icon(Icons.add_box_outlined,
                                     size: appbar_size))),
                       ])),
                   // 시간표
-                  const Expanded(child: WeekSchedule(tmp_display: false))
+                  const Expanded(child: SizedBox())
                 ]))
         )
     );

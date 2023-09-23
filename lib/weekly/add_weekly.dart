@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:live_one_day/config.dart';
-import 'package:live_one_day/table.dart';
+import 'package:live_one_day/weekly/table.dart';
 
 import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +11,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 
 
 const double _appbar_size = 22;  // 상단바 크기
-final TextEditingController _text_ctr = TextEditingController();  // 이름 입력란 컨트롤러
+final TextEditingController _name_ctr = TextEditingController();  // 이름 입력란 컨트롤러
 
 // 시간과 장소 객체
 Map<int, _Data> time_place = {};
@@ -30,7 +30,7 @@ class AddSchedulePage extends StatelessWidget {
 
   // 주간 일정 등록 매서드
   void _register(BuildContext context) {
-    if (_text_ctr.text.isEmpty) {
+    if (_name_ctr.text.isEmpty) {
       Fluttertoast.showToast(
           msg: "이름을 등록해 주세요",
           toastLength: Toast.LENGTH_SHORT,
@@ -67,7 +67,7 @@ class AddSchedulePage extends StatelessWidget {
         printForTest(tmps.toString());
         tmps.forEach((item) {
           // 마지막 설정
-          item.timeline.name = _text_ctr.text;
+          item.timeline.name = _name_ctr.text;
           item.timeline.color = c.value;
 
           // Timeline 데이터 추가
@@ -80,7 +80,7 @@ class AddSchedulePage extends StatelessWidget {
         table_data.forEach((key, value) => printForTest("${key} : ${value.length}"));
         // 캐시 삭제
         time_place.clear();
-        _text_ctr.text = "";
+        _name_ctr.clear();
         // 테이블 반영
         table_sctr.add(true);
         // Add Schedule 페이지 삭제
@@ -98,7 +98,7 @@ class AddSchedulePage extends StatelessWidget {
   // 수정할 경우
   void setInit() {
     int tmp = 0;
-    _text_ctr.text = data!["name"];
+    _name_ctr.text = data!["name"];
     (data!["time_and_place"] as List<Timeline>)
         .forEach((e) => time_place[tmp] = _Data(tmp++, e));
   }
@@ -126,6 +126,7 @@ class AddSchedulePage extends StatelessWidget {
                                   if (data != null) _register(context);
                                   else {
                                     time_place.clear();
+                                    _name_ctr.clear();
                                     Navigator.pop(context);
                                   }
                                 },
@@ -196,7 +197,7 @@ class _InputTPState extends State<InputTP> {
   List<TimeAndPlace> _ary = [];
 
   // 입력란 삭제 매서드
-  void _removeInputField(int idx) {
+  void _removeInputTP(int idx) {
     if (mounted)
       setState(() {
         time_place.remove(idx);
@@ -206,7 +207,7 @@ class _InputTPState extends State<InputTP> {
 
   @override
   void initState() {
-    remove_stream.listen((int idx) => _removeInputField(idx));
+    remove_stream.listen((int idx) => _removeInputTP(idx));
     time_place.values.forEach(
             (e) => _ary.add(TimeAndPlace(key: ValueKey<int>(length++))));
     super.initState();
@@ -223,7 +224,7 @@ class _InputTPState extends State<InputTP> {
               Container(
                   height: item_height,
                   child: TextField(
-                      controller: _text_ctr,
+                      controller: _name_ctr,
                       decoration: InputDecoration(
                           hintText: "이름",
                           hintStyle: TextStyle(
@@ -283,6 +284,9 @@ class TimeAndPlace extends StatefulWidget {
 }
 class _TimeAndPlaceState extends State<TimeAndPlace> {
 
+  // 장소 입력란 컨트롤러
+  final TextEditingController _place_ctr = TextEditingController();
+
   // 데이터
   late _Data _data;
 
@@ -304,7 +308,8 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                         tmp_data[_data.timeline.day]?.removeWhere((e) => (e.key as ValueKey).value == _data.key);
                         _data.timeline.day = e;
                         time_place[_data.key] = _data;
-                        tmp_data[_data.timeline.day]?.add(TableItem(timeline: _data.timeline, isTmp: true));
+                        tmp_data[_data.timeline.day]?.add(
+                            TableItem(key: ValueKey<int>(_data.key), timeline: _data.timeline, isTmp: true));
                         table_sctr.add(false);
                         Navigator.pop(context);
                       });
@@ -453,7 +458,8 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
                     );
 
                     time_place[_data.key] = _data;
-                    tmp_data[_data.timeline.day]?.add(TableItem(timeline: _data.timeline, isTmp: true));
+                    tmp_data[_data.timeline.day]?.add(
+                        TableItem(key: ValueKey<int>(_data.key), timeline: _data.timeline, isTmp: true));
                     table_sctr.add(false);
 
                     setState(() => Navigator.pop(context));
@@ -472,6 +478,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
     _data = time_place[(widget.key as ValueKey).value]!;
     tmp_data[_data.timeline.day]?.add(
         TableItem(key: ValueKey<int>(_data.key), timeline: _data.timeline, isTmp: true));
+    _place_ctr.text = _data.timeline.place;
     table_sctr.add(false);
     super.initState();
   }
@@ -572,6 +579,7 @@ class _TimeAndPlaceState extends State<TimeAndPlace> {
             // 장소 입력
             Positioned(
               child: TextField(
+                  controller: _place_ctr,
                   onChanged: (str) {
                     _data.timeline.place = str;
                     time_place[_data.key] = _data;
