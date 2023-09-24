@@ -1,10 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:live_one_day/weekly/table.dart';
+import 'package:live_one_day/weekly/weekly_schedule.dart';
 import 'package:path_provider/path_provider.dart';
 
 ///
@@ -67,6 +68,23 @@ const FontWeight bold = FontWeight.w900;
 ///
 StreamController<int> remove_sctr = StreamController<int>.broadcast();
 StreamController<bool> table_sctr = StreamController<bool>.broadcast();
+StreamController<bool> time_sctr = StreamController<bool>.broadcast();
+
+///
+/// 시간
+///
+late double HPT;
+late Timer _timer;
+void setHPT(double h) { HPT = h / (24 * 60); }
+void startTimer() {
+  _timer = Timer
+      .periodic(Duration(minutes: 1), (timer) => time_sctr.add(false));
+  printForTest('start timer');
+}
+void stopTimer() {
+  _timer.cancel();
+  printForTest('stop timer');
+}
 
 ///
 /// Timeline
@@ -290,10 +308,10 @@ Future<void> loadData() async {
 ///
 class AppLifecycleObserver extends WidgetsBindingObserver {
   @override
-  Future<void> didChangeAppLifecycleState(AppLifecycleState state) async {
-    if (state == AppLifecycleState.inactive) {
-      printForTest("앱 비활성화");
-      await saveData();
-    }
+  Future<AppExitResponse> didRequestAppExit() async {
+    printForTest("앱 종료");
+    _timer.cancel();
+    await saveData();
+    return super.didRequestAppExit();
   }
 }

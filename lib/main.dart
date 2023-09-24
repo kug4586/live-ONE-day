@@ -19,13 +19,11 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     item_width = (MediaQuery.of(context).size.width - 42) / 7;
+    setHPT(MediaQuery.of(context).size.height - 132);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: '하루살아',
-      home: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(child: MainFrame())
-      )
+      home: MainFrame()
     );
   }
 }

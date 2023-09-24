@@ -1,9 +1,8 @@
 import 'dart:async';
 
 import 'package:live_one_day/config.dart';
-import 'package:live_one_day/weekly/table.dart';
+import 'package:live_one_day/weekly/weekly_schedule.dart';
 
-import 'package:intl/intl.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_time_picker_spinner/flutter_time_picker_spinner.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -23,10 +22,17 @@ class _Data {
 }
 
 // 메인
-class AddSchedulePage extends StatelessWidget {
-  const AddSchedulePage({super.key, this.data = null});
+class AddWeekSchedulePage extends StatelessWidget {
+  const AddWeekSchedulePage({super.key, this.data = null});
 
   final Map<String, dynamic>? data;
+
+  // 뒤로가기
+  Future<void> _back(BuildContext ctx) async {
+    print("call [back]");
+    if (data != null) _register(ctx);
+    Navigator.pop(ctx);
+  }
 
   // 주간 일정 등록 매서드
   void _register(BuildContext context) {
@@ -106,77 +112,83 @@ class AddSchedulePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (data != null) setInit();
-    return Scaffold(
-        body: Container(
-          child: SafeArea(
-            child: GestureDetector(
-              onTap: () => FocusScope.of(context).unfocus(),
-              child:  Column(
-                  mainAxisSize: MainAxisSize.max,
-                  children: [
-                    // 앱 바
-                    Container(
-                        height: 50,
-                        child: Stack(children: [
-                          // 뒤로가기 버튼
-                          Positioned(
-                            bottom: 5, left: 15,
-                            child: GestureDetector(
-                                onTap: () {
-                                  if (data != null) _register(context);
-                                  else {
-                                    time_place.clear();
-                                    _name_ctr.clear();
-                                    Navigator.pop(context);
-                                  }
-                                },
-                                child: Icon(Icons.close, size: _appbar_size)),
-                          ),
-                          // 타이틀
-                          Positioned(
-                              bottom: 5, left: 45,
-                              child: Text(
-                                  "일정 생성",
-                                  style: TextStyle(
-                                      color: Colors.black,
-                                      fontWeight: medium,
-                                      fontSize: font_size[1]))),
-                          // 생성하기 버튼
-                          Positioned(
-                              bottom: 2, right: 15,
+    return WillPopScope(
+      onWillPop: () async {
+        await _back(context);
+        return false;
+      },
+      child: Scaffold(
+          body: Container(
+            child: SafeArea(
+              child: GestureDetector(
+                onTap: () => FocusScope.of(context).unfocus(),
+                child:  Column(
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      // 앱 바
+                      Container(
+                          height: 50,
+                          child: Stack(children: [
+                            // 뒤로가기 버튼
+                            Positioned(
+                              bottom: 5, left: 15,
                               child: GestureDetector(
                                   onTap: () {
-                                    if (FocusScope.of(context).hasFocus)
-                                      FocusScope.of(context).unfocus();
-                                    _register(context);
+                                    if (data != null) _register(context);
+                                    else {
+                                      time_place.clear();
+                                      _name_ctr.clear();
+                                      Navigator.pop(context);
+                                    }
                                   },
-                                  child: Icon(Icons.arrow_circle_up, size: 32)))
-                        ])
-                    ),
-                    // 테이블
-                    Flexible(
-                        flex: 7,
-                        child: Container(
-                          margin: EdgeInsets.symmetric(vertical: 5),
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(10)
-                          ),
-                          child: const WeekSchedule(tmp_display: true),
-                        )
-                    ),
-                    // 입력란
-                    Flexible(
-                        flex: 6,
-                        child: Container(
-                            margin: EdgeInsets.fromLTRB(15, 5, 15, 20),
-                            child: const InputTP()
-                        )
-                    )
-                  ]
+                                  child: Icon(Icons.close, size: _appbar_size)),
+                            ),
+                            // 타이틀
+                            Positioned(
+                                bottom: 5, left: 45,
+                                child: Text(
+                                    "일정 생성",
+                                    style: TextStyle(
+                                        color: Colors.black,
+                                        fontWeight: medium,
+                                        fontSize: font_size[1]))),
+                            // 생성하기 버튼
+                            Positioned(
+                                bottom: 2, right: 15,
+                                child: GestureDetector(
+                                    onTap: () {
+                                      if (FocusScope.of(context).hasFocus)
+                                        FocusScope.of(context).unfocus();
+                                      _register(context);
+                                    },
+                                    child: Icon(Icons.arrow_circle_up, size: 32)))
+                          ])
+                      ),
+                      // 테이블
+                      Flexible(
+                          flex: 7,
+                          child: Container(
+                            margin: EdgeInsets.symmetric(vertical: 5),
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10)
+                            ),
+                            child: const WeekSchedule(tmp_display: true),
+                          )
+                      ),
+                      // 입력란
+                      Flexible(
+                          flex: 6,
+                          child: Container(
+                              margin: EdgeInsets.fromLTRB(15, 5, 15, 20),
+                              child: const InputTP()
+                          )
+                      )
+                    ]
+                ),
               ),
             ),
-          ),
-        )
+          )
+      ),
     );
   }
 }

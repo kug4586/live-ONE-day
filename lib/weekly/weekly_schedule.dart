@@ -4,7 +4,7 @@ import 'package:live_one_day/config.dart';
 import 'package:flutter/material.dart';
 
 
-// 테이블 데이터
+// 임시 테이블 데이터
 Map<String, List<TableItem>> tmp_data = {
   "월요일" : [],
   "화요일" : [],
@@ -164,14 +164,14 @@ class TableItem extends StatelessWidget {
 
                     ["월요일", "화요일", "수요일", "목요일", "금요일", "토요일", "일요일"]
                         .forEach((day) {
-                          table_data[day]!.removeWhere(
-                                  (item) => timeline.name == timeline.name);
+                          table_data[day]!.removeWhere((item) => timeline.name == timeline.name);
                         });
+                    decreaseNum();
 
                     Navigator.pop(context);
                     Navigator.push(context,
                       MaterialPageRoute(builder: (context)
-                        => AddSchedulePage(data: tmp))
+                        => AddWeekSchedulePage(data: tmp))
                     );
                   },
                   icon: Icon(Icons.edit),
